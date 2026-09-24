@@ -748,6 +748,46 @@ test('setWallpaper resets kind to image so a picked photo beats a stale gradient
 	assert.equal(h.localStorage.getItem('dsh-dream-skin:wallpaper'), 'data:image/jpeg;base64,AAAA');
 });
 
+test('mobile: narrow-viewport surface tokens go near-solid + safe areas', () => {
+	// Below 700px (dsh-web-mobile-fix's breakpoint) the left sidebar floats as a
+	// drawer, the right side is dockkit floats — both translucent through the
+	// wallpaper wash. The injected stylesheet must override the PANEL surface
+	// tokens near-opaque on body, anchored on the OPAQUE --dsw-alias-bg-layer-1
+	// (bg-base itself is wash-rewritten to rgba at runtime, so anchoring on it
+	// stays translucent). bg-base itself must NOT be overridden: it IS the main
+	// canvas — an opaque bg-base erased the wallpaper everywhere (误伤 regression).
+	// Only the left and right sidebars are adapted; main content is untouched.
+	const src = fs.readFileSync(path.join(__dirname, '..', 'lib', 'client.js'), 'utf8');
+	const start = src.indexOf('@media (max-width: 700px)');
+	assert.ok(start !== -1, 'mobile media block present (700px, mobile-fix breakpoint)');
+	assert.ok(src.indexOf('@media (max-width: 1023.98px)') === -1, 'no stale 1023.98px block left over');
+	const end = src.indexOf('];', start);
+	const block = src.slice(start, end);
+	assert.ok(/\bbody\s*\{/.test(block), 'token overrides scoped to body');
+	// The left rail's COLLAPSED state must keep the original wash-translucent
+	// look: sidebar-fill is NOT token-overridden on body; the expanded drawer is
+	// instead painted via the stable collapsed-state attribute hook, so the rail
+	// (data-sidebar-collapsed present) never matches.
+	assert.ok(!block.includes('--dsw-specific-sidebar-fill'), 'sidebar-fill token stays untouched (collapsed rail keeps the wash)');
+	assert.ok(/\[data-sidebar-collapsed\]\) > div:first-child \[class\*=.{0,4}root.{0,4}\]:has\([^)]*logoRow[^)]*\):not\(\[class\*=.{0,4}collapsed.{0,4}\]\) \{[^}]*color-mix\(in srgb, var\(--dsw-alias-bg-layer-1\) 94%/.test(block), 'expanded drawer ROOT painted via the collapsed-state attribute hook');
+	// The main canvas keeps its wallpaper: bg-base is never overridden...
+	assert.ok(!/--dsw-alias-bg-base:/.test(block), 'bg-base must stay wash-translucent (wallpaper on the main canvas)');
+	// Main content gets NO adaptation: the center-column veil was reverted at the
+	// user's request (越改越差) — sidebars only.
+	assert.ok(!block.includes('.pI_x6G_centerCol'), 'main content column stays untouched');
+	// Every override must anchor on the wash-proof opaque layer-1, never bg-base.
+	assert.ok(!/color-mix\(in srgb,\s*var\(--dsw-alias-bg-base\)/.test(block), 'never anchor on wash-translucent bg-base');
+	assert.ok(!block.includes('backdrop-filter'), 'mobile block must NOT use backdrop-filter (containing-block guard)');
+	assert.ok(block.includes('env(safe-area-inset-left)'), 'left safe area');
+	assert.ok(block.includes('[data-rightbar-col] > *') && block.includes('env(safe-area-inset-right)'), 'right safe area via the stable rightbar hook');
+	// The dockkit tab host paints bg-base translucent; the right drawer's gaps
+	// bleed through it. It must get its own near-solid fill inside the block,
+	// hooked by the HASH-PROOF substring (CSS-modules keeps the readable name
+	// across rebuilds; only the hash re-rolls).
+	assert.ok(/\[class\*="_tabHost_"\][^{]*\{[^}]*background:\s*var\(--dsw-alias-bg-layer-1\)/.test(block), 'dockkit tab host (right drawer surface) fully opaque via hash-proof substring');
+	assert.ok(!/11olo/.test(block), 'no raw build hashes in the mobile block');
+});
+
 test('all locale dictionaries are complete and keep placeholders', () => {
 	// Every shipped dictionary must have exactly the zh key set (no missing /
 	// extra keys) and must keep the {name} / {error} / {errors} placeholders.
@@ -1493,8 +1533,15 @@ test('liquid-glass material CSS is injected on leaf cards only (no fixed-modal a
 	assert.ok(!/\.uV2eYG_card[^A-Za-z0-9_-]*\{[^}]*backdrop-filter/.test(css), 'composer card must NOT be a blur target (hosts fixed Tooltips)');
 	// The unsafe big containers MUST NOT be blurred (regression): those host the
 	// settings modal, and blurring them broke fixed positioning.
-	assert.ok(!/centerCol/.test(css), 'must NOT blur the main center column');
-	assert.ok(!/sidebarCol/.test(css), 'must NOT blur the sidebar column');
+	// The center column may be painted (the mobile readability veil does), but it
+	// must never become a backdrop-filter target: on the element itself that turns
+	// the column into a containing block for its fixed-positioned modals.
+	assert.ok(!/centerCol[^{]*\{[^}]*backdrop-filter/.test(css), 'center column must NOT be a blur target');
+	// The sidebar column may be repainted (the mobile near-solid fill does), but it
+	// must never become a backdrop-filter target: on the element itself that turns
+	// the column into a containing block for position:fixed descendants.
+	assert.ok(!/\.pI_x6G_sidebarCol[^{]*\{[^}]*backdrop-filter/.test(css), 'sidebar column must NOT be a blur target');
+	assert.ok(!/\.pI_x6G_rightbarCol[^{]*\{[^}]*backdrop-filter/.test(css), 'right column must NOT be a blur target');
 	// The sidebar root may never be a blur target (regression guard). It may still
 	// appear as a scoping PREFIX in alignment rules (e.g. `.hHd-Xa_root .hHd-Xa_footArea`)
 	// that only adjust margins — those never set backdrop-filter. So the guard is: any
