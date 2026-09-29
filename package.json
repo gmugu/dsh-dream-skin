@@ -1,6 +1,6 @@
 {
 	"name": "dsh-dream-skin",
-	"version": "9.23.0",
+	"version": "9.23.1",
 	"description": "DeepSeek Harness 换肤插件（Dream Skin for DSH）：8 套 iOS / Linear 式清透冷调的高质感主题 + 弥散光壁纸 + 每皮肤智能背景 + 强调色 + 主题包分享，把换肤做成材质与配色克制的高级感工艺，而非贴图。Works in native DSH Web and third-party desktop clients (DSH Desktop): 8 original premium themes, glass materials, wallpaper 2.0, per-user accent, shareable theme packs — purely native token system.",
 	"license": "MIT",
 	"type": "module",
@@ -68,7 +68,7 @@
 		},
 		"client": {
 			"inject": [
-				"@deepseek-ai/dsh-client-runtime",
+				"@deepseek-ai/dsh-client-store",
 				"@deepseek-ai/dsh-client-locale",
 				"@deepseek-ai/dsh-client-ui-theme",
 				"@deepseek-ai/dsh-client-ui-settings",
@@ -80,12 +80,11 @@
 	},
 	"peerDependencies": {
 		"@deepseek-ai/cordis": "^4.0.1",
-		"@deepseek-ai/dsh-client-locale": "^0.1.0-rc.6",
-		"@deepseek-ai/dsh-client-runtime": "^0.1.0-rc.6",
+		"@deepseek-ai/dsh-client-locale": "^0.1.0-rc.6 || ^0.2.0-rc.1",
 		"@deepseek-ai/dsh-client-store": "*",
-		"@deepseek-ai/dsh-client-ui-settings": "^0.1.0-rc.6",
-		"@deepseek-ai/dsh-client-ui-settings-general": "^0.1.0-rc.6",
-		"@deepseek-ai/dsh-client-ui-theme": "^0.1.0-rc.6",
+		"@deepseek-ai/dsh-client-ui-settings": "^0.1.0-rc.6 || ^0.2.0-rc.1",
+		"@deepseek-ai/dsh-client-ui-settings-general": "^0.1.0-rc.6 || ^0.2.0-rc.1",
+		"@deepseek-ai/dsh-client-ui-theme": "^0.1.0-rc.6 || ^0.2.0-rc.1",
 		"react": "^18.2.0"
 	},
 	"peerDependenciesMeta": {
@@ -93,9 +92,6 @@
 			"optional": true
 		},
 		"@deepseek-ai/dsh-client-locale": {
-			"optional": true
-		},
-		"@deepseek-ai/dsh-client-runtime": {
 			"optional": true
 		},
 		"@deepseek-ai/dsh-client-store": {
