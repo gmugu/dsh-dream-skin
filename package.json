@@ -15,6 +15,7 @@
 			"types": "./lib/types/client/index.d.ts",
 			"default": "./lib/client.js"
 		},
+		"./locale/*.json": "./locale/*.json",
 		"./package.json": "./package.json"
 	},
 	"files": [
@@ -22,6 +23,7 @@
 		"lib/client.js",
 		"lib/types",
 		"cordis.patch.yml",
+		"locale/*.json",
 		"README.md",
 		"docs/i18n",
 		"docs/previews",
